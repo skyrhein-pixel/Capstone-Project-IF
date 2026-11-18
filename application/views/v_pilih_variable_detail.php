@@ -1,0 +1,343 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+?>
+<div class="page-heading">
+    <div class="page-title">
+        <div class="row">
+            <div class="col-12 col-md-6 order-md-1 order-last">
+                <h3><?= $subtitle ?></h3>
+                <!-- <p class="text-subtitle text-muted">Informasi Data Tematik adalah data untuk memberikan wawasan spesifik mengenai suatu topik atau tema dalam konteks geografis.</p> -->
+            </div>
+            <div class="col-12 col-md-6 order-md-2 order-first">
+                <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="#"><?= $title ?></a></li>
+                        <li class="breadcrumb-item active" aria-current="page"><?= $subtitle ?></li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <section class="section">
+        <div class="card">
+            <div class="card-header">
+                <!-- <h5 class="card-title">
+                    jQuery Datatable
+                </h5> -->
+            </div>
+            <div class="card-body">
+                <?php 
+                function find_skor($tipe_variable, $status, $kode, $tipe_penilaian, $name=null)
+                {
+                    if($tipe_penilaian == false){
+                        return '<button title="View" type="button" data-name="'.$name.'" class="btn btn-sm btn-primary btn-view-skor"><i class="bi bi-eye bi-lg "></i></button>';
+                    }
+                    $submitted1 = false;
+                    $submitted2 = false;
+                    if($status["umum"]){
+                        if($status["umum"]->status == "submit"){
+                            $statusArr = [$status["umum"]->approval_kementerian,$status["umum"]->approval_kl,$status["umum"]->approval_provinsi];
+                            if(!in_array(0, $statusArr) && !in_array(2, $statusArr) && !in_array(3, $statusArr)){
+                                $submitted1 = true;
+                            }
+                        }
+                    }
+                    
+                    $id = 0;
+                    if($status["teknis"]){
+                        foreach ($status["teknis"] as $k => $v) {
+                            if($tipe_variable == "dinas" || $tipe_variable == "badan"){
+                                $id = $v->id_badan;
+                            }else{
+                                $id = $v->kode_kecamatan;
+                            }
+                            if($kode == $id && $v->tipe_soal == "teknis"){
+                                if($v->status == "submit"){
+                                    $statusArr = [$v->approval_kementerian,$v->approval_kl,$v->approval_provinsi];
+                                    if(!in_array(0, $statusArr) && !in_array(2, $statusArr) && !in_array(3, $statusArr)){
+                                        $submitted2 = true;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if($submitted1 == true && $submitted2 == true){
+                        return '<button class="dl-skor-btn btn btn-sm btn-primary" title="Download" type="button" data-var="'. $tipe_variable .'" data-badan="'. $id .'" class="btn btn-sm btn-primary"><i class="bi bi-download bi-lg"></i></button> <button class="view-skor-btn btn btn-sm btn-primary" title="View" type="button" data-var="'. $tipe_variable .'" data-badan="'. $id .'" class="btn btn-sm btn-primary"><i class="bi bi-eye bi-lg "></i></button>';
+                    }
+                    return '';
+
+                }
+                function find_status($tipe_variable, $status, $kode, $tipeSoal, $tipe_penilaian, $name=null)
+                {
+                    if($tipe_penilaian == false){
+                        return '<button title="View" type="button" data-name="'.$name.'" class="btn btn-sm btn-primary btn-view-skor"><i class="bi bi-eye bi-lg "></i></button>';
+                    }
+                    if($tipeSoal == "umum"){
+                        if($status["umum"]){
+                            if($status["umum"]->status == "draft"){
+                                return '<i class="bi bi-pencil-fill" title="Drafted"></i> <button title="Edit" type="submit" class="btn btn-sm btn-primary" name="tipe_soal_plus" value="'.$tipeSoal.'_'.$kode.'"><i class="bi bi-pencil-square bi-lg "></i></button>';
+                            }elseif($status["umum"]->status == "submit"){
+                                return '<button title="View" type="submit" class="btn btn-sm btn-primary" name="tipe_soal_plus" value="'.$tipeSoal.'_'.$kode.'"><i class="bi bi-eye bi-lg "></i></button>';
+                            }
+                        }else{
+                            return '<button title="Edit" type="submit" class="btn btn-sm btn-primary" name="tipe_soal_plus" value="'.$tipeSoal.'_'.$kode.'"><i class="bi bi-pencil-square bi-lg "></i></button>';
+                        }
+                    }else{
+                        if($status[$tipeSoal]){
+                            foreach ($status[$tipeSoal] as $k => $v) {
+                                if($tipe_variable == "dinas" || $tipe_variable == "badan"){
+                                    $id = $v->id_badan;
+                                }else{
+                                    $id = $v->kode_kecamatan;
+                                }
+                                if($kode == $id && $v->tipe_soal == $tipeSoal){
+                                    if($v->status == "draft"){
+                                        return '<i class="bi bi-pencil-fill" title="Drafted"> </i><button title="Edit" type="submit" class="btn btn-sm btn-primary" name="tipe_soal_plus" value="'.$tipeSoal.'_'.$kode.'"><i class="bi bi-pencil-square bi-lg "></i></button>';
+                                    }elseif($v->status == "submit"){
+                                        return '<button title="View" type="submit" class="btn btn-sm btn-primary" name="tipe_soal_plus" value="'.$tipeSoal.'_'.$kode.'"><i class="bi bi-eye bi-lg "></i></button>';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return '<button title="Edit" type="submit" class="btn btn-sm btn-primary" name="tipe_soal_plus" value="'.$tipeSoal.'_'.$kode.'"><i class="bi bi-pencil-square bi-lg "></i></button>';
+                }
+                function find_status_approval($tipe_variable, $status, $kode, $tipeSoal, $tipe_penilaian)
+                {
+                    if($tipe_penilaian == false){
+                        return '';
+                    }
+                    if($tipeSoal == "umum"){
+                        if($status["umum"]){
+                            return status_text([$status["umum"]->approval_kementerian,$status["umum"]->approval_kl,$status["umum"]->approval_provinsi],[$status["umum"]->comment_kementerian,$status["umum"]->comment_kl,$status["umum"]->comment_provinsi]);
+                        }else{
+                            return status_text([0,0,0],["","",""]);
+                        }
+                    }else{
+                        if($status[$tipeSoal]){
+                            foreach ($status[$tipeSoal] as $k => $v) {
+                                if($tipe_variable == "dinas" || $tipe_variable == "badan"){
+                                    $id = $v->id_badan;
+                                }else{
+                                    $id = $v->kode_kecamatan;
+                                }
+                                if($kode == $id && $v->tipe_soal == $tipeSoal){
+                                    return status_text([$v->approval_kementerian,$v->approval_kl,$v->approval_provinsi],[$v->comment_kementerian,$v->comment_kl,$v->comment_provinsi]);
+                                }
+                            }
+                        }
+                    }
+                    return status_text([0,0,0],["","",""]);
+                }
+                function status_text($arr, $comm)
+                {
+                    $approver = "";
+                    $html = "";
+                    $badge = "";
+                    foreach ($arr as $k => $v) {
+                        if($v <> 4){
+                            $rejected = "";
+                            $rejected2 = "";
+                            $rejected3 = "";
+                            if($k == 0){
+                                $approver = "Kemendagri";
+                            }elseif($k == 1){
+                                $approver = "K/L Terkait";
+                            }elseif($k == 2){
+                                $approver = "Provinsi";
+                            }
+
+                            if($v == 0){
+                                $txt = "Belum Submit";
+                                $badge = "secondary";
+                                return '<div class="mx-0 mt-0 mb-1 p-0"><span class="badge bg-'.$badge.'">'.$txt.'</span></div>';
+                            }elseif($v == 1){
+                                $txt = "Approved by";
+                                $badge = "success";
+                            }elseif($v == 2){
+                                $rejected = " rejected-span";
+                                $rejected2 = ' data-comment="'.htmlspecialchars($comm[$k]).'"';
+                                $rejected3 = '<i class="bi bi-info-circle"></i> ';
+                                $txt = "Rejected by";
+                                $badge = "danger";
+                                return '<div class="mx-0 mt-0 mb-1 p-0'.$rejected.'"'.$rejected2.'><span class="badge bg-'.$badge.'">'.$rejected3.$txt.' '.$approver.'</span></div>';
+                            }elseif($v == 3){
+                                $txt = "Menunggu Approval";
+                                $badge = "info";
+                            }
+                            $html .= '<div class="mx-0 mt-0 mb-1 p-0"><span class="badge bg-'.$badge.'">'.$txt.' '.$approver.'</span></div>';
+                        }
+                    }
+                    return $html;
+                }
+                ?>
+                <form class="form form-horizontal" action="<?= base_url("variable/add/$url") ?>" method="POST">
+                    <input type="hidden" name="tipe_variable" value="<?= $tipe_variable ?>">
+                    <div class="table-responsive">
+                        <table class="table" id="table2">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">NO</th>
+                                    <th class="text-center"><?= strtoupper($url) ?></th>
+                                    <th class="text-center">VARIABLE UMUM</th>
+                                    <th class="text-center">STATUS</th>
+                                    <th class="text-center">VARIABLE TEKNIS</th>
+                                    <th class="text-center">STATUS</th>
+                                    <th class="text-center">SKOR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($data_variable as $k => $v) {
+                                    $tipe_penilaian = true;
+                                    if($tipe_variable == "dinas" || $tipe_variable == "badan"){
+                                        $naming = "{$v->kode_badan}. {$v->nama_badan}";
+                                        if($v->parent){
+                                            $parent = "<small><small><small>{$v->kode_parent}. {$v->parent}</small></small></small><br>";
+                                        }else{
+                                            $parent = "";
+                                        }
+                                        if($v->tipe_penilaian == "terisi"){
+                                            $tipe_penilaian = false;
+                                        }
+                                        $code = $v->id_badan;
+                                    }else{
+                                        $parent = "";
+                                        $naming = "{$v->nama_kecamatan}";
+                                        $code = $v->kode_kecamatan;
+                                    }
+                                    ?>
+                                    <tr>
+                                        <td class="text-center"></td>
+                                        <td><?= $parent ?><?= $naming ?></td>
+                                        <td class="text-center">
+                                            <?= find_status($tipe_variable, $data_status, $code, "umum", $tipe_penilaian, $parent.$naming." ".str_replace("Badan ", "",$subtitle)) ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <?= find_status_approval($tipe_variable, $data_status, $code, "umum", $tipe_penilaian) ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <?= find_status($tipe_variable, $data_status, $code, "teknis", $tipe_penilaian, $parent.$naming." ".str_replace("Badan ", "",$subtitle)) ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <?= find_status_approval($tipe_variable, $data_status, $code, "teknis", $tipe_penilaian) ?>
+                                        </td>
+                                        <td class="text-center text-nowrap">
+                                            <?= find_skor($tipe_variable, $data_status, $code, $tipe_penilaian, $parent.$naming." ".str_replace("Badan ", "",$subtitle)) ?>
+                                        </td>
+                                    </tr>
+                                <?php } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="modal fade" id="modal-skor" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-centered modal-dialog-scrollable"
+            role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+
+                </div>
+                <div class="modal-body">
+                    <span id="skor-title"></span> mempunyai Nilai Tipelogi tipe A. dengan Nilai Skor di atas 800
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary ms-1" data-bs-dismiss="modal">
+                        <i class="bx bx-check d-block d-sm-none"></i>
+                        <span class="d-none d-sm-block">OK</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="modal-total-skor" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-centered modal-dialog-scrollable"
+        role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalCenterTitle">View Skor
+                </h5>
+            </div>
+            <div class="modal-body" id="total-skor-container">
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary ms-1" data-bs-dismiss="modal">
+                    <i class="bx bx-check d-block d-sm-none"></i>
+                    <span class="d-none d-sm-block">OK</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+</div>
+
+<script type="text/javascript">
+    $( document ).ready(function() {
+        $(document).on('click', '.btn-view-skor', function(e) {
+            $("#skor-title").text($(this).data("name"));
+            $('#modal-skor').modal('show');
+        });
+        $(document).on('click', '.view-skor-btn', function(e) {
+            var upElem = $(this);
+            var formData = new FormData();
+            formData.append('tipe_var', upElem.data("var"));
+            formData.append('id_badan', upElem.data("badan"));
+            $.ajax({
+                type: "POST",
+                url: "<?= base_url("variable/view_skor") ?>",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(data)
+                {
+                    $("#total-skor-container").html(data);
+                    $('#modal-total-skor').modal('show');
+                }
+            });
+            
+        });
+        $(document).on('click', '.dl-skor-btn', function(e){
+            var link = document.createElement("a");
+            link.download = "";
+            link.href = "<?= base_url("variable/download_variable_all/") ?>?tipe_var="+$(this).data("var")+"&id_badan="+$(this).data("badan");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            delete link;
+        });
+        $('form').on('submit', function(e) {
+            if (!$(this).data('submitted')) {
+              $(this).data('submitted', true);
+              $(this).find("button").addClass('disabled');
+          }
+          else {
+              e.preventDefault();
+          }
+      });
+        $(document).on( 'click','.rejected-span', function(e) {
+            swal.fire({
+                title: "Alasan Penolakan",
+                text: $(this).data("comment"),
+            });
+        });
+        let jquery_datatable = $("#table2").DataTable({
+            responsive: true,
+            "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                $('td:eq(0)', nRow).html(iDisplayIndexFull +1+".");
+            }
+        })
+
+        const setTableColor = () => {
+            document.querySelectorAll('.dataTables_paginate .pagination').forEach(dt => {
+                dt.classList.add('pagination-primary')
+            })
+        }
+        setTableColor()
+        jquery_datatable.on('draw', setTableColor)
+    });
+</script>
